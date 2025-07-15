@@ -14,3 +14,156 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+
+model User {
+  id         String   @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  name       String
+  about      String?
+  imageUrl   String?  @map("image_url")
+  thumbnail  String?
+  stats      Json?
+  updatedAt  DateTime? @map("updated_at") @db.Timestamptz
+  createdAt  DateTime @map("created_at") @db.Timestamptz
+
+  // Relations
+  createdTags     Tag[]       @relation("TagCreatedBy")
+  updatedTags     Tag[]       @relation("TagUpdatedBy")
+  createdCategories TagCategory[] @relation("TagCategoryCreatedBy")
+  updatedCategories TagCategory[] @relation("TagCategoryUpdatedBy")
+  createdGroups   TagGroup[]  @relation("TagGroupCreatedBy")
+  updatedGroups   TagGroup[]  @relation("TagGroupUpdatedBy")
+  createdGroupLinks TagGroupInfoTag[] @relation("GroupLinkCreatedBy")
+  updatedGroupLinks TagGroupInfoTag[] @relation("GroupLinkUpdatedBy")
+  verifierItems   Item[]      @relation("VerifierItems")
+  createdItems    Item[]      @relation("ItemCreatedBy")
+  updatedItems    Item[]      @relation("ItemUpdatedBy")
+  createdItemTags ItemTag[]   @relation("ItemTagCreatedBy")
+  updatedItemTags ItemTag[]   @relation("ItemTagUpdatedBy")
+  createdPlanets  Planet[]    @relation("PlanetCreatedBy")
+  updatedPlanets  Planet[]    @relation("PlanetUpdatedBy")
+}
+
+model Tag {
+  id          Int        @id @default(autoincrement())
+  name        String
+  fullTag     String     @map("full_tag")
+  position    Int?       @db.SmallInt
+  categoryId  Int
+  planetId    String?    @map("mod_id") @db.Uuid
+  icon        String?
+  description String
+
+  createdAt   DateTime   @db.Timestamptz
+  updatedAt   DateTime?  @db.Timestamptz
+  createdBy   String?    @db.Uuid
+  updatedBy   String?    @db.Uuid
+
+  // Relations
+  category    TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  planet      Planet?     @relation(fields: [planetId], references: [id], onDelete: Cascade)
+  createdByUser User?     @relation("TagCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  updatedByUser User?     @relation("TagUpdatedBy", fields: [updatedBy], references: [id], onDelete: Cascade)
+  itemTags    ItemTag[]
+}
+
+model TagCategory {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  color       String
+  duplicate   Boolean?
+
+  createdAt   DateTime   @db.Timestamptz
+  updatedAt   DateTime?  @db.Timestamptz
+  createdBy   String?    @db.Uuid
+  updatedBy   String?    @db.Uuid
+
+  // Relations
+  tags        Tag[]
+  groupLinks  TagGroupInfoTag[]
+  createdByUser User? @relation("TagCategoryCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  updatedByUser User? @relation("TagCategoryUpdatedBy", fields: [updatedBy], references: [id], onDelete: Cascade)
+}
+
+model TagGroup {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+
+  createdAt   DateTime   @db.Timestamptz
+  updatedAt   DateTime?  @db.Timestamptz
+  createdBy   String?    @db.Uuid
+  updatedBy   String?    @db.Uuid
+
+  // Relations
+  groupLinks  TagGroupInfoTag[]
+  createdByUser User? @relation("TagGroupCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  updatedByUser User? @relation("TagGroupUpdatedBy", fields: [updatedBy], references: [id], onDelete: Cascade)
+}
+
+model TagGroupInfoTag {
+  groupId    Int
+  categoryId Int
+  position   Int     @default(0) @db.SmallInt
+
+  createdAt  DateTime   @db.Timestamptz
+  updatedAt  DateTime?  @db.Timestamptz
+  createdBy  String?    @db.Uuid
+  updatedBy  String?    @db.Uuid
+
+  group      TagGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  category   TagCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdByUser User?    @relation("GroupLinkCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  updatedByUser User?    @relation("GroupLinkUpdatedBy", fields: [updatedBy], references: [id], onDelete: Cascade)
+
+  @@id([groupId, categoryId])
+}
+
+model Item {
+  id          Int       @id @default(autoincrement())
+  verifierId  String    @db.Uuid
+
+  createdAt   DateTime   @db.Timestamptz
+  updatedAt   DateTime?  @db.Timestamptz
+  createdBy   String?    @db.Uuid
+  updatedBy   String?    @db.Uuid
+
+  verifier    User      @relation("VerifierItems", fields: [verifierId], references: [id], onDelete: Cascade)
+  createdByUser User?   @relation("ItemCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  updatedByUser User?   @relation("ItemUpdatedBy", fields: [updatedBy], references: [id], onDelete: Cascade)
+  itemTags    ItemTag[]
+}
+
+model ItemTag {
+  itemId    Int
+  tagId     Int
+
+  createdAt DateTime   @db.Timestamptz
+  updatedAt DateTime?  @db.Timestamptz
+  createdBy String?    @db.Uuid
+  updatedBy String?    @db.Uuid
+
+  item      Item       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag       Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdByUser User?  @relation("ItemTagCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  updatedByUser User?  @relation("ItemTagUpdatedBy", fields: [updatedBy], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+  @@index([itemId])
+  @@index([tagId])
+  @@index([itemId, tagId], name: "idx_item_tag_item_id_tag_id")
+}
+
+model Planet {
+  id          String   @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  name        String   @unique
+  position    Int?     @default(0) @db.SmallInt
+  createdAt   DateTime @map("created_at") @db.Timestamptz
+  updatedAt   DateTime? @db.Timestamptz
+  createdBy   String?  @db.Uuid
+  updatedBy   String?  @db.Uuid
+
+  createdByUser User?  @relation("PlanetCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  updatedByUser User?  @relation("PlanetUpdatedBy", fields: [updatedBy], references: [id], onDelete: Cascade)
+  tags       Tag[]
+}
