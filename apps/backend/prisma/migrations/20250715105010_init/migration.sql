@@ -19,7 +19,7 @@ CREATE TABLE "Tag" (
     "full_tag" TEXT NOT NULL,
     "position" SMALLINT,
     "categoryId" INTEGER NOT NULL,
-    "mod_id" UUID,
+    "planet_id" UUID,
     "icon" TEXT,
     "description" TEXT NOT NULL,
     "createdAt" TIMESTAMPTZ NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE "TagGroupInfoTag" (
 
 -- CreateTable
 CREATE TABLE "Item" (
-    "id" SERIAL NOT NULL,
+    "id" UUID NOT NULL,
     "verifierId" UUID NOT NULL,
     "createdAt" TIMESTAMPTZ NOT NULL,
     "updatedAt" TIMESTAMPTZ,
@@ -84,7 +84,7 @@ CREATE TABLE "Item" (
 
 -- CreateTable
 CREATE TABLE "ItemTag" (
-    "itemId" INTEGER NOT NULL,
+    "itemId" UUID NOT NULL,
     "tagId" INTEGER NOT NULL,
     "createdAt" TIMESTAMPTZ NOT NULL,
     "updatedAt" TIMESTAMPTZ,
@@ -129,7 +129,7 @@ CREATE UNIQUE INDEX "Planet_name_key" ON "Planet"("name");
 ALTER TABLE "Tag" ADD CONSTRAINT "Tag_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "TagCategory"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Tag" ADD CONSTRAINT "Tag_mod_id_fkey" FOREIGN KEY ("mod_id") REFERENCES "Planet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Tag" ADD CONSTRAINT "Tag_planet_id_fkey" FOREIGN KEY ("planet_id") REFERENCES "Planet"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Tag" ADD CONSTRAINT "Tag_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
